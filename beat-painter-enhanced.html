@@ -92,13 +92,17 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
   line-height:1;
   text-align:center;
   background:linear-gradient(135deg,#fff 30%,rgba(255,255,255,.55));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
   margin-bottom:14px;
 }
 .ci-wordmark em {
   font-style:italic;
   background:linear-gradient(100deg,#ff4f6e,#c97eff,#4fa3ff);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
 }
 
 .ci-tagline {
@@ -357,12 +361,16 @@ header{
 .oct-row{display:flex;align-items:center;gap:10px}
 .oct-label{font-size:11px;color:var(--muted);min-width:14px;text-align:center}
 input[type=range].styled{
-  -webkit-appearance:none;flex:1;height:3px;
+  -webkit-appearance:none;
+  appearance:none;
+  flex:1;height:3px;
   background:linear-gradient(to right, var(--fill-color,rgba(255,255,255,.3)) var(--pct,50%), rgba(255,255,255,.1) var(--pct,50%));
   border-radius:3px;cursor:none;outline:none;
 }
 input[type=range].styled::-webkit-slider-thumb{
-  -webkit-appearance:none;width:14px;height:14px;
+  -webkit-appearance:none;
+  appearance:none;
+  width:14px;height:14px;
   border-radius:50%;background:#fff;cursor:none;
   box-shadow:0 2px 8px rgba(0,0,0,.4);transition:transform .15s;
 }
@@ -434,7 +442,9 @@ input[type=range].styled:hover::-webkit-slider-thumb{transform:scale(1.25)}
 .intro-big em{
   font-style:italic;
   background:linear-gradient(100deg,var(--r) 0%,var(--p) 50%,var(--b) 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
 }
 .intro-cta{
   display:flex;align-items:center;gap:8px;margin-top:8px;
@@ -861,17 +871,38 @@ const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
 const INSTRS = [
   {id:'sine',   name:'Sine',    icon:'∿', color:'#ff4f6e',
-   mk:()=>new Tone.Synth({oscillator:{type:'sine'},    envelope:{attack:.02,decay:.25,sustain:.25,release:1.2}}).toDestination()},
+   mk:()=>new Tone.Synth({oscillator:{type:'sine'}, envelope:{attack:0.05, decay:0.3, sustain:0.4, release:1.5}}).toDestination()},
   {id:'pad',    name:'Pad',     icon:'◎', color:'#c97eff',
-   mk:()=>new Tone.PolySynth(Tone.Synth,{oscillator:{type:'sawtooth'},envelope:{attack:.5,decay:.1,sustain:.9,release:2.5}}).toDestination()},
+   mk:()=> {
+     const filter = new Tone.Filter(800, "lowpass").toDestination();
+     return new Tone.PolySynth(Tone.Synth, {
+       oscillator: {type:'sine'},
+       envelope: {attack:1.2, decay:0.8, sustain:1, release:3}
+     }).connect(filter);
+   }},
   {id:'pluck',  name:'Pluck',   icon:'◇', color:'#3ee8a0',
-   mk:()=>new Tone.PluckSynth({attackNoise:1,dampening:3800,resonance:.97}).toDestination()},
+   mk:()=>new Tone.PolySynth(Tone.Synth, {
+     oscillator: {type:'triangle'},
+     envelope: {attack:0.01, decay:1.2, sustain:0, release:1.2}
+   }).toDestination()},
   {id:'bass',   name:'Bass',    icon:'▰', color:'#4fa3ff',
-   mk:()=>new Tone.Synth({oscillator:{type:'square'},  envelope:{attack:.01,decay:.08,sustain:.7,release:.4}}).toDestination()},
+   mk:()=>new Tone.Synth({
+     oscillator: {type:'triangle'},
+     envelope: {attack:0.08, decay:0.2, sustain:0.6, release:0.8}
+   }).toDestination()},
   {id:'bell',   name:'Bell',    icon:'◉', color:'#ffc84a',
-   mk:()=>new Tone.MetalSynth({envelope:{attack:.001,decay:.8,release:.5},harmonicity:5.1,modulationIndex:16,resonance:3500,octaves:1.5}).toDestination()},
+   mk:()=> {
+     const reverb = new Tone.Reverb(2).toDestination();
+     return new Tone.PolySynth(Tone.Synth, {
+       oscillator: {type:'sine'},
+       envelope: {attack:0.005, decay:0.8, sustain:0, release:0.8}
+     }).connect(reverb);
+   }},
   {id:'organ',  name:'Organ',   icon:'⊛', color:'#ff9640',
-   mk:()=>new Tone.Synth({oscillator:{type:'square',partials:[1,.5,.25]},envelope:{attack:.01,decay:.01,sustain:1,release:.2}}).toDestination()},
+   mk:()=>new Tone.Synth({
+     oscillator: {type:'sine', partials:[1, 0.4, 0.2]},
+     envelope: {attack:0.1, decay:0.1, sustain:1, release:0.8}
+   }).toDestination()},
 ];
 
 const STATE = {
@@ -885,9 +916,20 @@ const STATE = {
 };
 
 const SAMPLES = [
-  { name: "Cinematic Sunrise", author: "viswas", data: [{"x":100,"y":300,"w":120,"h":40,"color":"#ff4f6e","instrId":"sine","note":"C4","dur":0.8},{"x":250,"y":200,"w":80,"h":60,"color":"#c97eff","instrId":"pad","note":"G4","dur":1.5},{"x":400,"y":100,"w":200,"h":30,"color":"#3ee8a0","instrId":"pluck","note":"E5","dur":1.2},{"x":450,"y":400,"w":150,"h":80,"color":"#4fa3ff","instrId":"bass","note":"C3","dur":2.0}] },
-  { name: "Midnight Groove", author: "viswas", data: [{"x":50,"y":450,"w":80,"h":40,"color":"#4fa3ff","instrId":"bass","note":"G2","dur":0.5},{"x":150,"y":450,"w":80,"h":40,"color":"#4fa3ff","instrId":"bass","note":"G2","dur":0.5},{"x":250,"y":150,"w":40,"h":40,"color":"#ffc84a","instrId":"bell","note":"D5","dur":0.2},{"x":300,"y":250,"w":100,"h":50,"color":"#ff9640","instrId":"organ","note":"B3","dur":1.0},{"x":450,"y":100,"w":120,"h":60,"color":"#c97eff","instrId":"pad","note":"G5","dur":1.8}] },
-  { name: "Billie Jean Groove (MJ)", author: "viswas", data: [
+  { name: "Cinematic Sunrise", author: "viswas", data: [
+      {"x":100,"y":300,"w":150,"h":40,"color":"#ff4f6e","instrId":"sine","note":"C4","dur":1.2},
+      {"x":300,"y":200,"w":200,"h":60,"color":"#c97eff","instrId":"pad","note":"G4","dur":2.5},
+      {"x":550,"y":100,"w":150,"h":30,"color":"#3ee8a0","instrId":"pluck","note":"E5","dur":1.8},
+      {"x":100,"y":450,"w":600,"h":80,"color":"#4fa3ff","instrId":"bass","note":"C3","dur":5.0}
+  ] },
+  { name: "Midnight Breeze", author: "viswas", data: [
+      {"x":50,"y":450,"w":120,"h":40,"color":"#4fa3ff","instrId":"bass","note":"A2","dur":0.8},
+      {"x":200,"y":450,"w":120,"h":40,"color":"#4fa3ff","instrId":"bass","note":"E2","dur":0.8},
+      {"x":350,"y":150,"w":80,"h":40,"color":"#ffc84a","instrId":"bell","note":"E5","dur":0.5},
+      {"x":450,"y":250,"w":150,"h":50,"color":"#ff9640","instrId":"organ","note":"A3","dur":2.0},
+      {"x":650,"y":100,"w":200,"h":60,"color":"#c97eff","instrId":"pad","note":"C5","dur":3.0}
+  ] },
+  { name: "Billie Jean (Smooth MJ)", author: "viswas", data: [
       {"x":40,"y":400,"w":60,"h":40,"color":"#4fa3ff","instrId":"bass","note":"F#2","dur":0.5},
       {"x":140,"y":350,"w":60,"h":40,"color":"#4fa3ff","instrId":"bass","note":"C#3","dur":0.5},
       {"x":240,"y":300,"w":60,"h":40,"color":"#4fa3ff","instrId":"bass","note":"E3","dur":0.5},
@@ -897,26 +939,22 @@ const SAMPLES = [
       {"x":640,"y":450,"w":60,"h":40,"color":"#4fa3ff","instrId":"bass","note":"B2","dur":0.5},
       {"x":740,"y":350,"w":60,"h":40,"color":"#4fa3ff","instrId":"bass","note":"C#3","dur":0.5},
       {"x":40,"y":150,"w":40,"h":40,"color":"#ffc84a","instrId":"bell","note":"C5","dur":0.2},
-      {"x":240,"y":150,"w":40,"h":40,"color":"#ffc84a","instrId":"bell","note":"C5","dur":0.2},
-      {"x":440,"y":150,"w":40,"h":40,"color":"#ffc84a","instrId":"bell","note":"C5","dur":0.2},
-      {"x":640,"y":150,"w":40,"h":40,"color":"#ffc84a","instrId":"bell","note":"C5","dur":0.2}
+      {"x":240,"y":150,"w":40,"h":40,"color":"#ffc84a","instrId":"bell","note":"C5","dur":0.2}
   ] },
   { name: "Smooth Criminal Vibe", author: "viswas", data: [
-      {"x":50,"y":300,"w":30,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"A3","dur":0.3},
-      {"x":100,"y":300,"w":30,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"A3","dur":0.3},
-      {"x":150,"y":350,"w":30,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"G3","dur":0.3},
-      {"x":200,"y":300,"w":30,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"A3","dur":0.3},
-      {"x":250,"y":250,"w":30,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"C4","dur":0.3},
-      {"x":300,"y":250,"w":30,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"C4","dur":0.3},
-      {"x":350,"y":200,"w":30,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"D4","dur":0.3},
-      {"x":400,"y":200,"w":30,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"D4","dur":0.3}
+      {"x":50,"y":300,"w":40,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"A3","dur":0.4},
+      {"x":120,"y":300,"w":40,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"A3","dur":0.4},
+      {"x":190,"y":350,"w":40,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"G3","dur":0.4},
+      {"x":260,"y":300,"w":40,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"A3","dur":0.4},
+      {"x":330,"y":250,"w":40,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"C4","dur":0.4},
+      {"x":400,"y":250,"w":40,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"C4","dur":0.4},
+      {"x":470,"y":200,"w":40,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"D4","dur":0.4},
+      {"x":540,"y":200,"w":40,"h":40,"color":"#3ee8a0","instrId":"pluck","note":"D4","dur":0.4}
   ] },
-  { name: "Starlight Lullaby", author: "viswas", data: [
-      {"x":100,"y":100,"w":50,"h":50,"color":"#ffc84a","instrId":"bell","note":"E5","dur":1},
-      {"x":200,"y":150,"w":50,"h":50,"color":"#ffc84a","instrId":"bell","note":"D5","dur":1},
-      {"x":300,"y":200,"w":50,"h":50,"color":"#ffc84a","instrId":"bell","note":"C5","dur":1},
-      {"x":400,"y":150,"w":100,"h":50,"color":"#ff9640","instrId":"organ","note":"G4","dur":2},
-      {"x":150,"y":400,"w":200,"h":100,"color":"#c97eff","instrId":"pad","note":"C3","dur":4}
+  { name: "Ambient Clouds", author: "viswas", data: [
+      {"x":50,"y":100,"w":350,"h":50,"color":"#c97eff","instrId":"pad","note":"C4","dur":4},
+      {"x":450,"y":150,"w":350,"h":50,"color":"#c97eff","instrId":"pad","note":"G4","dur":4},
+      {"x":100,"y":450,"w":700,"h":100,"color":"#c97eff","instrId":"pad","note":"F3","dur":6}
   ] }
 ];
 
